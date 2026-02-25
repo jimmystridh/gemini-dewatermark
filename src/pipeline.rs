@@ -85,19 +85,25 @@ fn chw_tensor_to_image(tensor: &Array4<f32>) -> RgbImage {
 /// Uses `extended_ratio` to crop a slightly larger region from the inpainted output,
 /// then scales and overlays it onto the original image.
 /// Ports image-processor.js:100-143
-fn compose(
-    original: &DynamicImage,
-    inpainted: &RgbImage,
-    config: &PipelineConfig,
-) -> DynamicImage {
+fn compose(original: &DynamicImage, inpainted: &RgbImage, config: &PipelineConfig) -> DynamicImage {
     let (orig_w, orig_h) = original.dimensions();
     let (proc_w, proc_h) = inpainted.dimensions();
 
     // Calculate watermark regions using extended ratio for better blending
-    let orig_region =
-        mask::calculate_region(orig_w, orig_h, config.extended_ratio, config.extended_ratio, config.position);
-    let proc_region =
-        mask::calculate_region(proc_w, proc_h, config.extended_ratio, config.extended_ratio, config.position);
+    let orig_region = mask::calculate_region(
+        orig_w,
+        orig_h,
+        config.extended_ratio,
+        config.extended_ratio,
+        config.position,
+    );
+    let proc_region = mask::calculate_region(
+        proc_w,
+        proc_h,
+        config.extended_ratio,
+        config.extended_ratio,
+        config.position,
+    );
 
     // Crop the inpainted region from the processed image
     let inpainted_dynamic = DynamicImage::ImageRgb8(inpainted.clone());
@@ -137,12 +143,10 @@ pub fn run(
 ) -> Result<()> {
     // Step 1: Load image
     progress("Loading image...");
-    let original = image::open(input).with_context(|| format!("Failed to open {}", input.display()))?;
+    let original =
+        image::open(input).with_context(|| format!("Failed to open {}", input.display()))?;
     let (orig_w, orig_h) = original.dimensions();
-    progress(&format!(
-        "Image loaded: {}x{}",
-        orig_w, orig_h
-    ));
+    progress(&format!("Image loaded: {}x{}", orig_w, orig_h));
 
     // Step 2: Resize to model input size
     progress("Resizing for model...");
@@ -167,8 +171,8 @@ pub fn run(
 
     // Step 4: Run inference
     progress("Running AI inference...");
-    let output_tensor = model::run_inference(session, image_tensor, mask_tensor)
-        .context("Inference failed")?;
+    let output_tensor =
+        model::run_inference(session, image_tensor, mask_tensor).context("Inference failed")?;
 
     // Step 5: Postprocess and compose
     progress("Composing final image...");

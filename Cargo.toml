@@ -2,7 +2,14 @@
 name = "gemini-dewatermark"
 version = "0.1.0"
 edition = "2021"
-description = "CLI tool to remove Gemini watermarks from images using LaMa inpainting"
+authors = ["Jimmy Stridh"]
+description = "Fast CLI tool to remove watermarks from Google Gemini-generated images using LaMa inpainting"
+license = "Apache-2.0"
+readme = "README.md"
+repository = "https://github.com/jimmystridh/gemini-dewatermark"
+keywords = ["gemini", "watermark", "inpainting", "lama", "onnx"]
+categories = ["command-line-utilities", "multimedia::images"]
+rust-version = "1.75"
 
 [dependencies]
 ort = { version = "2.0.0-rc.11", features = ["ndarray"] }
@@ -13,3 +20,9 @@ indicatif = "0.17"
 anyhow = "1"
 dirs = "6"
 ureq = "3"
+
+[profile.release]
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true

@@ -53,7 +53,8 @@ struct Cli {
 }
 
 fn data_dir_model_path() -> Result<PathBuf> {
-    let data_dir = dirs::data_dir().context("Could not determine data directory for your platform")?;
+    let data_dir =
+        dirs::data_dir().context("Could not determine data directory for your platform")?;
     Ok(data_dir.join("gemini-dewatermark").join(MODEL_FILENAME))
 }
 
@@ -186,7 +187,7 @@ fn download_model() -> Result<()> {
     Ok(())
 }
 
-fn default_output(input: &PathBuf) -> PathBuf {
+fn default_output(input: &std::path::Path) -> PathBuf {
     let stem = input
         .file_stem()
         .map(|s| s.to_string_lossy().to_string())
