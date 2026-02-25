@@ -1,0 +1,15 @@
+[package]
+name = "gemini-dewatermark"
+version = "0.1.0"
+edition = "2021"
+description = "CLI tool to remove Gemini watermarks from images using LaMa inpainting"
+
+[dependencies]
+ort = { version = "2.0.0-rc.11", features = ["ndarray"] }
+ndarray = "0.17"
+image = "0.25"
+clap = { version = "4", features = ["derive"] }
+indicatif = "0.17"
+anyhow = "1"
+dirs = "6"
+ureq = "3"
