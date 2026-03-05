@@ -102,12 +102,24 @@ jobs:
             target/
           key: ${{ runner.os }}-${{ matrix.target }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
+      - name: Pre-download ONNX Runtime for cross builds
+        if: matrix.use_cross == true
+        shell: bash
+        run: |
+          ORT_URL="https://cdn.pyke.io/0/pyke:ort-rs/ms@1.23.2/${{ matrix.target }}.tar.lzma2"
+          ORT_HASH=$(echo -n "$ORT_URL" | sha256sum | cut -d' ' -f1)
+          ORT_CACHE_DIR="$HOME/.cache/ort.pyke.io/dfbin/${{ matrix.target }}"
+          mkdir -p "$ORT_CACHE_DIR"
+          curl -fSL "$ORT_URL" -o "$ORT_CACHE_DIR/$ORT_HASH"
+          echo "ORT_CACHE_DIR=$ORT_CACHE_DIR" >> $GITHUB_ENV
+
       - name: Build
         if: runner.os != 'Windows'
         shell: bash
         run: |
           if [[ "${{ matrix.use_cross }}" == "true" ]]; then
-            cross build --release --target ${{ matrix.target }}
+            CROSS_CONTAINER_OPTS="-v $ORT_CACHE_DIR:/.cache/ort.pyke.io/dfbin/${{ matrix.target }}" \
+              cross build --release --target ${{ matrix.target }}
           else
             cargo build --release --target ${{ matrix.target }}
           fi
