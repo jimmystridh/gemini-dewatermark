@@ -19,7 +19,7 @@ clap = { version = "4", features = ["derive"] }
 indicatif = "0.17"
 anyhow = "1"
 dirs = "6"
-ureq = "3"
+ureq = { version = "3", default-features = false, features = ["rustls", "gzip"] }
 
 [profile.release]
 lto = true
