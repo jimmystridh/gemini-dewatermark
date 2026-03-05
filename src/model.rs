@@ -6,9 +6,12 @@ use ort::session::Session;
 ///
 /// Uses Level3 graph optimization and 4 intra-op threads for best throughput.
 pub fn load_session(path: &std::path::Path) -> Result<Session> {
-    let session = Session::builder()?
-        .with_optimization_level(ort::session::builder::GraphOptimizationLevel::Level3)?
-        .with_intra_threads(4)?
+    let session = Session::builder()
+        .map_err(|e| anyhow::anyhow!("{e}"))?
+        .with_optimization_level(ort::session::builder::GraphOptimizationLevel::Level3)
+        .map_err(|e| anyhow::anyhow!("{e}"))?
+        .with_intra_threads(4)
+        .map_err(|e| anyhow::anyhow!("{e}"))?
         .commit_from_file(path)
         .with_context(|| format!("Failed to load ONNX model from {}", path.display()))?;
 
