@@ -235,10 +235,7 @@ fn run() -> Result<()> {
     let mut session = model::load_session(&model_path)?;
 
     for (i, input) in cli.input.iter().enumerate() {
-        let output = cli
-            .output
-            .clone()
-            .unwrap_or_else(|| default_output(input));
+        let output = cli.output.clone().unwrap_or_else(|| default_output(input));
 
         if cli.input.len() > 1 {
             eprintln!(
