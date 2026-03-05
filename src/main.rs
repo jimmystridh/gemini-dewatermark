@@ -20,10 +20,10 @@ const MODEL_DOWNLOAD_URL: &str =
 #[command(name = "gemini-dewatermark")]
 #[command(about = "Remove Gemini watermarks from images using LaMa inpainting")]
 struct Cli {
-    /// Input image path
-    input: Option<PathBuf>,
+    /// Input image path(s)
+    input: Vec<PathBuf>,
 
-    /// Output image path [default: <input>_clean.png]
+    /// Output image path (only valid with a single input) [default: <input>_clean.png]
     #[arg(short, long)]
     output: Option<PathBuf>,
 
@@ -203,17 +203,24 @@ fn run() -> Result<()> {
         return download_model();
     }
 
-    let input = cli.input.context(
-        "Missing required argument: <INPUT>\n\n\
-         Usage: gemini-dewatermark <INPUT> [OPTIONS]\n\
-         Use --help for more information.",
-    )?;
-
-    if !input.exists() {
-        bail!("Input file not found: {}", input.display());
+    if cli.input.is_empty() {
+        bail!(
+            "Missing required argument: <INPUT>\n\n\
+             Usage: gemini-dewatermark <INPUT>... [OPTIONS]\n\
+             Use --help for more information."
+        );
     }
 
-    let output = cli.output.unwrap_or_else(|| default_output(&input));
+    if cli.output.is_some() && cli.input.len() > 1 {
+        bail!("--output cannot be used with multiple input files");
+    }
+
+    for input in &cli.input {
+        if !input.exists() {
+            bail!("Input file not found: {}", input.display());
+        }
+    }
+
     let model_path = resolve_model_path(cli.model.as_ref())?;
     let position = WatermarkPosition::from_str(&cli.position)?;
 
@@ -224,28 +231,44 @@ fn run() -> Result<()> {
         position,
     };
 
-    let pb = ProgressBar::new(5);
-    pb.set_style(
-        ProgressStyle::default_bar()
-            .template("{spinner:.green} [{bar:40.cyan/blue}] {pos}/{len} {msg}")
-            .context("Invalid progress bar template")?
-            .progress_chars("=> "),
-    );
-
-    pb.set_message("Loading model...");
+    eprintln!("Loading model...");
     let mut session = model::load_session(&model_path)?;
-    pb.inc(1);
 
-    let mut step = 0u64;
-    pipeline::run(&input, &output, &mut session, &config, |msg| {
-        pb.set_message(msg.to_string());
-        if step < 4 {
-            step += 1;
-            pb.set_position(1 + step);
+    for (i, input) in cli.input.iter().enumerate() {
+        let output = cli
+            .output
+            .clone()
+            .unwrap_or_else(|| default_output(input));
+
+        if cli.input.len() > 1 {
+            eprintln!(
+                "[{}/{}] Processing {}...",
+                i + 1,
+                cli.input.len(),
+                input.display()
+            );
         }
-    })?;
 
-    pb.finish_with_message(format!("Saved to {}", output.display()));
+        let pb = ProgressBar::new(4);
+        pb.set_style(
+            ProgressStyle::default_bar()
+                .template("{spinner:.green} [{bar:40.cyan/blue}] {pos}/{len} {msg}")
+                .context("Invalid progress bar template")?
+                .progress_chars("=> "),
+        );
+
+        let mut step = 0u64;
+        pipeline::run(input, &output, &mut session, &config, |msg| {
+            pb.set_message(msg.to_string());
+            if step < 4 {
+                step += 1;
+                pb.set_position(step);
+            }
+        })?;
+
+        pb.finish_with_message(format!("Saved to {}", output.display()));
+    }
+
     Ok(())
 }
 
